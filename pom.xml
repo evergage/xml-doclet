@@ -7,9 +7,10 @@
 		<version>9</version>
 	</parent>
 
-	<groupId>com.github.markusbernhardt</groupId>
+
+	<groupId>com.evergage.thirdparty.xml-doclet</groupId>
 	<artifactId>xml-doclet</artifactId>
-	<version>2.0.0-SNAPSHOT</version>
+	<version>1.0.6-evg1</version>
 	<packaging>jar</packaging>
 
 	<name>XML Doclet</name>
@@ -45,12 +46,12 @@
 			<email>markus.bernhardt@me.com</email>
 		</developer>
 	</developers>
-	
+
 	<contributors>
 	    <contributor>
 	      <name>Georg Tsakumagos</name>
 	      <email>tsakumagos@gmail.com</email>
-	    </contributor>	
+	    </contributor>
 	</contributors>
 
 	<dependencies>

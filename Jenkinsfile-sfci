@@ -57,17 +57,17 @@ executePipeline(envDef) {
 
     stage('Build') {
         // Build wiremock-bom
-        mavenBuild([ maven_goals: 'package', maven_args : '-f pom.xml'])
+        mavenBuild([ maven_goals: 'install', maven_args : '-f pom.xml'])
     }
 
     // Release Jenkins
     if (params.RELEASE) {
         stage('Prepare Release') {
-            mavenReleasePrepare([maven_goals: 'package', maven_args : '-f pom.xml'])
+            mavenReleasePrepare([maven_goals: 'install', maven_args : '-f pom.xml'])
         }
 
         stage('Release') {
-            mavenReleasePerform([maven_goals: 'package', maven_args : '-f pom.xml'])
+            mavenReleasePerform([maven_goals: 'install', maven_args : '-f pom.xml'])
         }
 
     // Hypergage Jenkins
@@ -76,7 +76,7 @@ executePipeline(envDef) {
             // deploy release artifacts only when we are building a release
             if (BuildUtils.isReleaseBuild(env)) {
                 mavenVersionsSet([managed: false, auto_increment: false])
-                mavenStageArtifacts([maven_goals: 'package', maven_args: '-f pom.xml'])
+                mavenStageArtifacts([maven_goals: 'install', maven_args: '-f pom.xml'])
             }
         }
     }

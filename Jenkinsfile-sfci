@@ -1,0 +1,88 @@
+#!/usr/bin/env groovy
+
+@Library('sfci-pipeline-sharedlib@master') _
+
+import net.sfdc.dci.BuildUtils
+import net.sfdc.dci.DockerUtils
+import net.sfdc.dci.MavenUtils
+
+env.RELEASE_BRANCHES = ['master']
+//env.CODE_COVERAGE_THRESHOLD = 80
+env.GUS_TEAM_NAME = 'Hypergage'
+
+def buildContainer(dsl) {
+    def dockerRepo = 'ops0-artifactrepo1-0-prd.data.sfdc.net'
+
+    // Login to our docker repo so we can pull down the necessary images
+    DockerUtils.dockerLogin(dsl, dockerRepo)
+}
+
+def releaseParameters = {
+    parameters([
+        booleanParam(
+                defaultValue: false,
+                description: 'Do you want to release?',
+                name: 'RELEASE'
+        ),
+        string(
+                defaultValue: MavenUtils.getDefaultReleaseVersion(this),
+                description: 'Enter the release version',
+                name: 'RELEASE_VERSION'
+        ),
+        string(
+                defaultValue: "${BuildUtils.incrementVersion(MavenUtils.getDefaultReleaseVersion(this), BuildUtils.getVersionTypeToIncrement(this))}-SNAPSHOT",
+                description: 'Next Release Version',
+                name: 'NEXT_RELEASE_VERSION'
+        )
+    ])
+}
+
+def envDef = [
+    releaseParameters: releaseParameters,
+    buildImage: 'ops0-artifactrepo1-0-prd.data.sfdc.net/dci/centos7-sfci-jdk11-maven:a003e11',
+    emailTo   : 'jorosco@salesforce.com'
+]
+
+executePipeline(envDef) {
+    stage('init:scm') {
+        echo("Branch: ${env.BRANCH_NAME}")
+        echo('Release Version: ' + MavenUtils.getDefaultReleaseVersion(this))
+        def causes = currentBuild.getBuildCauses()
+        sh "echo ${causes}"
+        checkout scm
+        mavenInit()
+    }
+
+    buildContainer(this)
+
+    stage('Build') {
+        // Build wiremock-bom
+        mavenBuild([ maven_goals: 'package', maven_args : '-f pom.xml'])
+    }
+
+    // Release Jenkins
+    if (params.RELEASE) {
+        stage('Prepare Release') {
+            mavenReleasePrepare([maven_goals: 'package', maven_args : '-f pom.xml'])
+        }
+
+        stage('Release') {
+            mavenReleasePerform([maven_goals: 'package', maven_args : '-f pom.xml'])
+        }
+
+    // Hypergage Jenkins
+    } else {
+        stage('Stage Artifacts') {
+            // deploy release artifacts only when we are building a release
+            if (BuildUtils.isReleaseBuild(env)) {
+                mavenVersionsSet([managed: false, auto_increment: false])
+                mavenStageArtifacts([maven_goals: 'package', maven_args: '-f pom.xml'])
+            }
+        }
+    }
+
+    stage('GUS compliance') {
+        git2gus()
+    }
+}
+

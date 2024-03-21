@@ -10,7 +10,7 @@
 
 	<groupId>com.evergage.thirdparty.xml-doclet</groupId>
 	<artifactId>xml-doclet</artifactId>
-	<version>1.0.6-evg1-SNAPSHOT</version>
+	<version>1.0.6-evg1</version>
 	<packaging>jar</packaging>
 
 	<name>XML Doclet</name>
